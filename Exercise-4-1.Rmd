@@ -1,0 +1,109 @@
+---
+title: "Exercise 4 - 1"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Clustering and PCA
+
+I run both clustering and PCA on the 11 properties of wine data.
+
+I run clustering first.
+```{r , include=FALSE}
+library(ggplot2)
+library(LICORS)  
+library(foreach)
+library(mosaic)
+library(tidyverse)
+
+wine = read.csv("~/Desktop/Data Mining/Exercise4-1/wine.csv", header=TRUE)
+```
+
+```{r, include=FALSE}
+#### clustering
+
+x = wine[,1:11]
+x = scale(x,center = TRUE, scale = TRUE)
+
+mu = attr(x,"scaled:center")
+sigma = attr(x,"scaled:scale")
+```
+
+I use kmeans++ method to clustering.
+```{r}
+# divide the data in 2 clusters to distinguish red from white
+clust1 = kmeanspp(x,k = 2, nstart = 50)
+```
+
+```{r, echo=FALSE}
+# white and red
+x1 = which(clust1$cluster == 1)
+x2 = which(clust1$cluster == 2)
+table(wine[x1,13])
+table(wine[x2,13])
+```
+
+Regardless small error, clustering can distinguish white and red generally. The wines belong to the cluster 1 is white generally and the wines belobg to the cluster 2 is red in general.
+However it is hard to sort the higher frome the lower quality wines, the result is below:
+```{r, echo= FALSE}
+# distinguish quality
+table(wine[x1,12])
+table(wine[x2,12])
+```
+
+As we can see, the quality is evenly distributed.
+
+Next I use PCA to divide the wine data.
+
+```{r, include=FALSE}
+#### PCA
+z = wine[,1:11]
+pairs(z)
+pc1 = prcomp(z, scale.=TRUE)
+summary(pc1)
+loadings = pc1$rotation
+scores = pc1$x
+```
+
+See difference between white wine and red wine, and it can easily tell that PC1 is the best way to distinguish between white and red wine.
+
+
+
+```{r, echo=FALSE}
+# white and red
+qplot(scores[,1], scores[,2], color=wine$color, xlab='Component 1', ylab='Component 2')
+qplot(scores[,1], scores[,3], color=wine$color, xlab='Component 1', ylab='Component 3')
+qplot(scores[,2], scores[,3], color=wine$color, xlab='Component 2', ylab='Component 3')
+```
+
+To distingusih between quality.
+```{r,echo=FALSE}
+#quality
+qplot(scores[,1], scores[,2], color=wine$quality, xlab='Component 1', ylab='Component 2')
+qplot(scores[,1], scores[,3], color=wine$quality, xlab='Component 1', ylab='Component 3')
+qplot(scores[,1], scores[,4], color=wine$quality, xlab='Component 1', ylab='Component 4')
+qplot(scores[,1], scores[,5], color=wine$quality, xlab='Component 1', ylab='Component 5')
+qplot(scores[,1], scores[,6], color=wine$quality, xlab='Component 1', ylab='Component 6')
+qplot(scores[,1], scores[,7], color=wine$quality, xlab='Component 1', ylab='Component 7')
+qplot(scores[,1], scores[,8], color=wine$quality, xlab='Component 1', ylab='Component 8')
+qplot(scores[,1], scores[,9], color=wine$quality, xlab='Component 1', ylab='Component 9')
+qplot(scores[,1], scores[,10], color=wine$quality, xlab='Component 1', ylab='Component 10')
+qplot(scores[,1], scores[,11], color=wine$quality, xlab='Component 1', ylab='Component 11')
+
+```
+
+As we can see above, it can not sort the wine according to quality no matter what component it is.
+
+### Question
+
+1.Which dimensionality reduction technique makes more sense to you for this data? 
+
+I think both dimensionality reduction technique makes sense, but PCA makes more senses. Because PCA can show the part that is overlapped, it is more precise.
+
+
+2.Does this technique also seem capable of sorting the higher from the lower quality wines?
+
+I think both the technique can not sort the higher from the lower quality wines, as we can see above.
