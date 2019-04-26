@@ -16,5 +16,5 @@ In this part, we choose the support as 0.1, thus the probability of transactions
 
 We can visualize the association rules through network graph. The larger the label size, the more frequent this item appeared in a transaction, which is another representation of the barplot. The dark the color of the edge, the higher the lift of the association, which corresponded to what I found. We use the graph to show the association rules. In the following graph, the label size represents the frequency of the item, the color degree represents the lift of the association. The dark the color is, the higher lift is.
 
-![](HW4_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](figure-markdown_github/screenshot_003514.png)
 
