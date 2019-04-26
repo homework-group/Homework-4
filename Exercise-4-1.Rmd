@@ -107,3 +107,92 @@ I think both dimensionality reduction technique makes sense, but PCA makes more 
 2.Does this technique also seem capable of sorting the higher from the lower quality wines?
 
 I think both the technique can not sort the higher from the lower quality wines, as we can see above.
+
+# HW4-2
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r,include=FALSE}
+rm(list=ls())
+library(ggplot2)
+library(LICORS) 
+library(foreach)
+library(mosaic)
+library(cluster)
+```
+```{r,include=FALSE}
+mkt = read.csv("~/Documents/GitHub/ECO395M/data/social_marketing.csv")
+mkt$total <- rowSums(mkt[,2:37])
+mkt$spam_rate<-mkt$spam/mkt$total
+mkt$adult_rate<-mkt$adult/mkt$total
+```
+Overall view about data.
+
+
+
+```{r,echo=FALSE}
+ggplot(data = mkt) + 
+  geom_point(mapping = aes(x = adult_rate, y = spam, size = total))+
+  labs(x="adult rate", y="spam #", title="adult and spam tweets posting", size="total tweets")
+```
+Categorize as spam-bot if number of spam tweets>1, as adult-bot if adult rate > 20%, and remove them.
+We are relatively strict in removing users who post spams but more tolerent if users post adult content. This is because adult content is an option of interest for normal adult users, but normal users are not likely to post spams.
+```{r,include=FALSE}
+mkt <- mkt[mkt$spam<1,]
+mkt <- mkt[mkt$adult_rate<0.2,]
+mkt$total<-NULL
+mkt$spam_rate<-NULL
+mkt$adult_rate<-NULL
+mkt$spam<-NULL
+```
+# Clustering
+Use k++ method to select k
+```{r,echo=FALSE,error=FALSE}
+X = scale(mkt[,-1]) # cluster on measurables
+k_grid = seq(2, 20, by=1)
+SSE_grid = foreach(k = k_grid, .combine='c') %do% {
+  cluster_k = kmeans(X, k, nstart=50)
+  cluster_k$tot.withinss
+}
+plot(k_grid, SSE_grid)
+```
+We choose k=10 for clustering.
+```{r,include=FALSE}
+X = mkt[,-1]
+X = scale(X, center=TRUE, scale=TRUE)
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+# Run k-means with 10 clusters and 25 starts (restart 25 times)
+clust1 = kmeans(X, 10, nstart=25)
+# Below are the center of 10 clusters
+for (i in 1:10){
+  cat("cluster ",i)
+  cat("      ")
+  cat("cluster size = ",length(which(clust1$cluster == i)))
+  cat("\n\n")
+  cl1<-as.data.frame(clust1$center[i,]*sigma + mu)
+  cl1$category<-rownames(cl1)
+  cl1 <- cl1[order(-cl1$`clust1$center[i, ] * sigma + mu`),]
+  colnames(cl1)[1] <- "cluster center"
+  cl1$category<-NULL
+  print(head(cl1, n=4))
+  cat("--------------------")
+  cat("\n")
+}
+```
+We can see that the largest clusters includes people with interests in health&fitness, sports-fandom,cooking, college/univ, news&politics, dating&photosharing.
+
+#Pca to analyze the most prominent features of users
+```{r,echo=FALSE}
+pc = prcomp(X, scale=TRUE, rank=8)
+summary(pc)
+plot(pc)
+loadings = pc$rotation
+scores = pc$x
+loadings = pc$rotation
+for (i in 1:8){
+print(loadings[,1] %>% sort %>% tail(3))
+}
+```
+The result seems average and is a group of correlated interests.
