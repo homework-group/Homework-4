@@ -1,0 +1,80 @@
+---
+title: "HW3"
+output: pdf_document
+---
+Find some interesting association rules for these shopping baskets
+Pick your own thresholds for lift and confidence
+```{r setup, include=FALSE}
+library(tidyverse)
+library(arules)  # has a big ecosystem of packages built around it
+library(arulesViz)
+library(reshape)
+```
+
+
+```{r cars,include=FALSE}
+groceries = read.csv("../groceries.csv",header=FALSE)
+groceries$buyers <- seq.int(nrow(groceries))
+grocery_raw <-melt(groceries, id =c("buyers"))
+grocery_raw<- grocery_raw[,-2]
+grocery_raw <- grocery_raw[-which(grocery_raw$value == ""), ]
+colnames(grocery_raw)[2] <- "item"
+grocery_raw <- as.data.frame(grocery_raw)
+str(grocery_raw)
+summary(grocery_raw)
+```
+
+Show the top 20 frequent items in the baskets using the bar chart, and the bar chart shows the basic scene of transactions.
+```{r pressure, echo=FALSE}
+grocery_raw$item %>%
+  summary(maxsum=Inf) %>%
+  sort(decreasing=TRUE) %>%
+  head(20) %>%
+  barplot(las=2, cex.names=0.6)
+```
+
+```{r,echo=FALSE,include=FALSE}
+grocery_raw$buyers = factor(grocery_raw$buyers)
+groceries = split(x=grocery_raw$item, f=grocery_raw$buyers)
+groceries[[1]]
+groceries[[2]]
+```
+
+```{r,echo=FALSE,include=FALSE}
+groceries = lapply(groceries, unique)
+grocerytrans = as(groceries, "transactions")
+summary(grocerytrans)
+```
+In this part, we choose the support as 0.1, thus the probability of transactions that contain all these items in the basket will be higher than 0.1. There are around 15,000 transactions, thus the support 0.1 will give more than 1500 times combinations.
+For the confidence, we choose 0.6, since confidence rate should be larger than support rate. Lower confidence rate will give more association. The graph shows that when confidence rate is lower than 0.6, the number of association will not go up as the confidence rate decreases. Hence, we think 0.6 is the best confidence rate to choose.
+```{r,echo=FALSE,include=FALSE}
+groceryrules = apriori(grocerytrans, 
+                     parameter=list(support=.01, confidence=.06))
+```
+
+```{r,echo=FALSE,include=FALSE}
+inspect(groceryrules)
+inspect(subset(groceryrules, lift > 5))
+inspect(subset(groceryrules, confidence > 0.06))
+inspect(subset(groceryrules, lift > 10 & confidence > 0.06))
+```
+
+```{r,echo=FALSE}
+plot(groceryrules)
+```
+
+```{r,echo=FALSE,include=FALSE}
+inspect(subset(groceryrules, support > 0.01))
+inspect(subset(groceryrules, confidence > 0.6))
+```
+We can visualize the association rules through network graph. The larger the label size, the more frequent this item appeared in a transaction, which is another representation of the barplot. The dark the color of the edge, the higher the lift of the association, which corresponded to what I found. 
+We use the graph to show the association rules. In the following graph, the label size represents the frequency of the item, the color degree represents the lift of the association.
+The dark the color is, the higher lift is.
+```{r,echo=FALSE,include=FALSE}
+sub1 = subset(groceryrules, subset=confidence > 0.06 & support > 0.01)
+summary(sub1)
+plot(sub1, method='graph')
+plot(head(sub1, 100, by='lift'), method='graph')
+saveAsGraph(sub1, file = "grocery.graphml")
+```
+
